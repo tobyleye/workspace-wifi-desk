@@ -66,5 +66,5 @@ Tests: `pip install -r requirements-dev.txt && python -m pytest -q`
 
 ## Links
 
-[Field notes](./notes/field-notes.md.md) · [Go-live note](./notes/go-live.md) · [Problem statement](notes/./problem.md) ·
+[Field notes](notes/field-notes.md) · [Go-live note](notes/go-live.md) · [Problem statement](notes/problem.md) ·
 [The skill](./skill/SKILL.md)
