@@ -1,5 +1,4 @@
 # Secrets: service account keys and env files
-*.json
 !package.json
 .env
 .env.*
