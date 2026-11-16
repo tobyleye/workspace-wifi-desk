@@ -30,7 +30,7 @@ def test_add_member_then_add_another_plan(store):
 def test_list_shows_plan_state(store):
     seed(store, admin.config.now())
     text = admin.list_members(store)
-    assert "Bola Ade (bola_ade)" in text and "[ended]" in text and "[active]" in text
+    assert "Chidi Eze (chidi_eze)" in text and "[active]" in text and "[ended]" not in text
 
 
 def test_unknown_plan_is_refused(store):

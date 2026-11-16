@@ -299,25 +299,26 @@ def test_get_plan_expiry_full_plan_and_expired_and_unknown():
 
 
 def test_demo_members_behave_as_described():
-    """On DEMO_DAY each seeded member is in the state the seed file and README describe."""
-    thu = DEMO_DAY
+    """The demo: seeded members request codes as the clock moves forward from DEMO_DAY (Monday)."""
     w = World()
-    seed(w.store, at(thu, 8))
-    expect = {
-        "ada_obi": ("issued", "Ada"),
-        "tunde_bakare": ("weekly_limit_reached", "Tunde"),
-        "chidi_eze": ("issued", "Chidi"),
-        "bola_ade": ("plan_expired", "Bola"),
-        "kemi_lawal": ("issued", "Kemi"),
-        "femi_ojo": ("plan_allowance_used", "Femi"),
-        "zainab_bello": ("issued", "Zainab"),
-    }
-    results = {c: w.request(at(thu), contact_id=c) for c in expect}
-    for contact_id, (status, first) in expect.items():
-        assert (results[contact_id]["status"], results[contact_id]["first_name"]) == (status, first), contact_id
-    assert results["ada_obi"]["days_left"] == 1
-    assert results["kemi_lawal"]["days_left"] == 0 and results["kemi_lawal"]["ends_soon"] is True
-    assert results["zainab_bello"]["ends_soon"] is True
-    assert results["bola_ade"]["last_end_date"] == "2026-11-16"
-    for m in DEMO_MEMBERS:
-        assert m.state.split(":")[0] == results[m.contact_id]["status"], m.name
+    seed(w.store, at(DEMO_DAY, 8))
+    mon = DEMO_DAY
+    assert w.code_rows() == []
+
+    for m in DEMO_MEMBERS:  # everyone gets a code on day one
+        assert w.request(at(mon), contact_id=m.contact_id)["status"] == "issued", m.name
+    assert len(w.code_rows()) == 4
+
+    for n in (1, 2):  # Tue, Wed: daily plans get new codes, full plans get the same one back
+        for c in ("ada_obi", "kemi_lawal"):
+            assert w.request(at(mon + timedelta(days=n)), contact_id=c)["status"] == "issued"
+        assert w.request(at(mon + timedelta(days=n)), contact_id="chidi_eze")["status"] == "already_issued"
+    thu = mon + timedelta(days=3)
+    ada = w.request(at(thu), contact_id="ada_obi")
+    assert ada["status"] == "weekly_limit_reached" and ada["resets_on"] == "2026-11-23"
+    assert w.request(at(thu), contact_id="kemi_lawal")["status"] == "plan_allowance_used"
+
+    next_mon = mon + timedelta(days=7)
+    assert w.request(at(next_mon), contact_id="ada_obi")["status"] == "issued"
+    assert w.request(at(next_mon), contact_id="zainab_bello")["status"] == "plan_expired"
+    assert w.request(at(date(2026, 12, 16)), contact_id="chidi_eze")["status"] == "plan_expired"

@@ -87,11 +87,10 @@ def test_call_tools(setup):
     client, backend, unifi = setup
     initialize(client)
     r = call_tool(client, "request_access_code", " Ada_Obi ")
-    assert r["status"] == "issued" and r["first_name"] == "Ada" and r["days_left"] == 1
+    assert r["status"] == "issued" and r["first_name"] == "Ada" and r["days_left"] == 2
     assert r["code"][5] == "-" and r["code"].replace("-", "") in {v["code"] for v in unifi.vouchers.values()}
     again = call_tool(client, "request_access_code", "ada_obi")
     assert again["status"] == "already_issued" and again["code"] == r["code"]
-    assert call_tool(client, "request_access_code", "tunde_bakare")["status"] == "weekly_limit_reached"
     assert call_tool(client, "request_access_code", "someone_else") == {"status": "not_a_member"}
     exp = call_tool(client, "get_plan_expiry", "chidi_eze")
     assert exp["status"] == "active" and exp["plan_name"] == "Monthly" and "end_date_display" in exp
@@ -148,7 +147,7 @@ def test_main_starts_with_monkeypatched_backend(monkeypatch):
     seed(SheetStore(backend, cache_seconds=0), NOW)
     with TestClient(started["app"]) as client:
         assert initialize(client).status_code == 200
-        assert call_tool(client, "get_plan_expiry", "bola_ade")["status"] == "plan_expired"
+        assert call_tool(client, "get_plan_expiry", "chidi_eze")["status"] == "active"
 
 
 def test_tool_result_is_plain_json_text(setup):
@@ -173,13 +172,13 @@ def test_clock_route_needs_admin_token(setup):
 def test_clock_jump_makes_a_plan_expire_then_reset(setup):
     client, _, _ = setup
     initialize(client)
-    # Chidi's monthly plan (seeded on Thu 19 Nov, started 14 Nov) ends 13 December.
+    # Chidi's monthly plan (started Mon 16 Nov) ends 15 December.
     assert call_tool(client, "get_plan_expiry", "chidi_eze")["status"] == "active"
     r = client.post("/admin/clock?to=2026-12-20", headers=ADMIN).json()
     assert r["now"] == "2026-12-20T10:00+01:00" and r["shifted"] is True
     assert client.get("/").json()["clock"]["now"].startswith("2026-12-20")
     exp = call_tool(client, "get_plan_expiry", "chidi_eze")
-    assert exp["status"] == "plan_expired" and exp["last_end_date"] == "2026-12-13"
+    assert exp["status"] == "plan_expired" and exp["last_end_date"] == "2026-12-15"
     assert call_tool(client, "request_access_code", "chidi_eze")["status"] == "plan_expired"
     r = client.post("/admin/clock?reset=1", headers=ADMIN).json()
     assert r["shifted"] is False and r["now"].startswith("2026-11-19")

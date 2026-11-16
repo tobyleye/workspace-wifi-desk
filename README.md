@@ -36,7 +36,7 @@ enable the Sheets API, create a service account, download its JSON key, share th
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env        # fill in SPREADSHEET_ID, key file path, MCP_TOKEN, ADMIN_TOKEN
-python -m app.seed          # optional: add 7 demo members
+python -m app.seed          # optional: add 4 demo members, one per plan
 python -m app.server        # http://localhost:8000, MCP at /mcp
 ```
 

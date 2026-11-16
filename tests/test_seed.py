@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from app.config import TZ
+from app.config import PLANS, TZ
 from app.seed import DEMO_MEMBERS, seed
 from app.store import SheetStore
 from tests.fake_sheets import FakeSheetsBackend
@@ -18,9 +18,9 @@ def make_store():
 def test_seeds_only_when_members_empty():
     backend, store = make_store()
     assert seed(store, NOW) is True
-    assert len(store.snapshot(fresh=True).members) == len(DEMO_MEMBERS) == 7
+    assert len(store.snapshot(fresh=True).members) == len(DEMO_MEMBERS) == 4
     assert seed(store, NOW) is False
-    assert len(store.snapshot(fresh=True).members) == 7
+    assert len(store.snapshot(fresh=True).members) == 4
 
 
 def test_seed_does_not_touch_a_sheet_with_real_members():
@@ -28,6 +28,28 @@ def test_seed_does_not_touch_a_sheet_with_real_members():
     backend.type_row("Members", [1, "real_member", "Real Member", ""])
     assert seed(store, NOW) is False
     assert len(backend.tabs["Members"]) == 2
+
+
+def test_seed_adds_one_member_per_plan_and_no_codes():
+    backend, store = make_store()
+    seed(store, NOW)
+    snap = store.snapshot(fresh=True)
+    assert sorted(s.plan_id for s in snap.subscriptions) == sorted(PLANS)
+    assert snap.codes == []
+
+
+def test_seed_adds_a_demo_guide_tab_once():
+    backend, store = make_store()
+    seed(store, NOW)
+    guide = backend.tabs["Demo guide"]
+    assert guide[0] == ["Username", "Plan"]
+    assert [r[0] for r in guide[1:]] == [m.contact_id for m in DEMO_MEMBERS]
+    assert guide[1] == ["ada_obi", "Monthly (3 days a week)"]
+    # Re-seeding after clearing the members does not duplicate the guide.
+    for title in ("Members", "Subscriptions"):
+        backend.tabs[title] = backend.tabs[title][:1]
+    seed(store, NOW)
+    assert len(backend.tabs["Demo guide"]) == 1 + len(DEMO_MEMBERS)
 
 
 def test_seed_writes_text_only():
@@ -48,9 +70,9 @@ def test_main_runs_on_its_own(monkeypatch, capsys):
 
     seed_module.main()
     out = capsys.readouterr().out
-    assert "Added 7 demo members. On Thursday, 19 November 2026:" in out
-    assert "Tunde Bakare" in out and "admin/clock?to=2026-11-19" in out
-    assert len(backend.tabs["Members"]) == 8
+    assert "Added 4 demo members, all starting Monday, 16 November 2026:" in out
+    assert "Kemi Lawal" in out and "admin/clock?to=2026-11-16" in out
+    assert len(backend.tabs["Members"]) == 5
     seed_module.main()
     assert "already has members" in capsys.readouterr().out
-    assert len(backend.tabs["Members"]) == 8
+    assert len(backend.tabs["Members"]) == 5
