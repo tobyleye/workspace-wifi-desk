@@ -7,4 +7,4 @@ desk, I just have to wait, and so does everyone else on a day-based plan. This t
 job on WhatsApp: a member sends a message, it checks their plan and its rules, and sends back a
 WiFi code that works on up to 2 devices. It also tells members when their plan ends and answers
 questions about opening hours and plans. Anything involving money, renewals or day passes still
-goes to reception. I deliberately left these out of the solution to keep it stupid simple
+goes to reception. I deliberately left these out of the solution to keep it as simple as possible.
